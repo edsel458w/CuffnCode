@@ -1,136 +1,181 @@
 # CuffnCode — Parallel Blood Pressure Simulation Dashboard
 
-Dashboard simulasi pengukuran tekanan darah berbasis metode osilometrik, dibangun sebagai tugas besar mata kuliah **IFB 206 Komputasi Paralel**. Proyek ini mensimulasikan pipeline pemrosesan sinyal paralel menggunakan Python `multiprocessing`, dengan visualisasi real-time melalui web dashboard berbasis Chart.js.
+> Simulasi pengukuran tekanan darah berbasis komputasi paralel | IFB 206 Komputasi Paralel
 
 ---
 
-## Gambaran Proyek
+## Daftar Isi
 
-Sistem meniru cara kerja tensimeter digital (sphygmomanometer osilometrik):
-1. Manset dipompa hingga ~180 mmHg, lalu dikempiskan perlahan (4,5 mmHg/detik)
-2. Osilasi tekanan arteri terdeteksi pada dinding manset selama proses deflasi
-3. Nilai **SYS / MAP / DIA** dihitung dari amplitudo puncak osilasi menggunakan rasio standar
-
----
-
-## Arsitektur Pipeline Paralel
-
-```
-simulator.py  ──raw_queue──►  filter_worker.py  ──filtered_queue──►  envelope_worker.py  ──results_queue──►  main.py
-   [P1]                            [P2]                                     [P3]                               [Main]
-ADC simulation             60 Hz notch + 10 Hz LP                    Peak detection + BP                  Visualisasi
-```
-
-Setiap proses berjalan secara independen dan berkomunikasi melalui `mp.Queue(maxsize=20)` untuk flow control / backpressure.
-
-### P1 — `simulator.py` (Akuisisi)
-
-Mensimulasikan output ADC dari sensor tekanan:
-- Sample rate: **500 Hz**, dikirim dalam chunk 50 sampel (~100 ms/chunk)
-- Model sinyal: rampa tekanan manset + osilasi Gaussian + noise Gaussian
-- Nilai ground-truth: SYS = 120 mmHg, MAP = 100 mmHg, DIA = 80 mmHg
-
-### P2 — `filter_worker.py` (Filter Digital)
-
-Memproses sinyal mentah dari `raw_queue`:
-- **60 Hz IIR notch filter** — menghilangkan interferensi jala-jala listrik (PLN Indonesia)
-- **4th-order Butterworth low-pass 10 Hz** — mempertahankan osilasi jantung (~1,2 Hz), membuang noise HF
-- Filter bersifat stateful (`sosfilt_zi`) sehingga tidak ada transien di batas chunk
-
-### P3 — `envelope_worker.py` (Deteksi Puncak & BP)
-
-Memproses sinyal terfilter dari `filtered_queue`:
-- Memisahkan komponen osilasi dari rampa manset (baseline subtraction)
-- Mendeteksi puncak osilasi dengan `scipy.signal.find_peaks` (jarak minimum 0,4 detik)
-- Estimasi tekanan darah menggunakan rasio osilometrik standar:
-  - **Sistolic (SYS)**: puncak pertama dengan amplitudo ≥ 50% dari amplitudo maksimum
-  - **MAP**: puncak dengan amplitudo maksimum
-  - **Diastolik (DIA)**: puncak pertama setelah MAP dengan amplitudo ≤ 70% dari maksimum
-
-### Main — `main.py` (Visualisasi)
-
-Mengonsumsi `results_queue` dan menampilkan tiga grafik real-time via `matplotlib.animation.FuncAnimation`:
-- Sinyal mentah vs sinyal terfilter
-- Rampa tekanan manset
-- Envelope osilasi + puncak terdeteksi + estimasi BP
+- [Deskripsi Proyek](#deskripsi-proyek)
+- [Tujuan](#tujuan)
+- [Fitur Utama](#fitur-utama)
+- [Prasyarat Instalasi](#prasyarat-instalasi)
+- [Panduan Git Clone](#panduan-git-clone)
+- [Struktur Direktori](#struktur-direktori)
+- [Penggunaan](#penggunaan)
+- [Kontribusi](#kontribusi)
 
 ---
 
-## Web Dashboard (`docs/`)
+## Deskripsi Proyek
 
-Dashboard berbasis browser sebagai alternatif visualisasi yang dapat diakses tanpa instalasi Python.
+CuffnCode adalah sistem simulasi pengukuran tekanan darah yang mengimplementasikan metode **osilometrik** menggunakan arsitektur pipeline paralel. Proyek ini dibangun untuk mata kuliah IFB 206 Komputasi Paralel dan terdiri dari dua bagian utama:
 
-| File | Deskripsi |
-|------|-----------|
-| `index.html` | Halaman utama dashboard |
-| `assets/style.css` | Stylesheet — dark medical theme, Inter + JetBrains Mono |
-| `assets/simulation.js` | Simulasi pipeline lengkap di JavaScript (tanpa backend) |
+- **Python Pipeline** — tiga proses paralel (`multiprocessing`) yang meniru alur pemrosesan sinyal dari ADC hingga estimasi tekanan darah
+- **Web Dashboard** — antarmuka browser berbasis Chart.js yang menjalankan simulasi pipeline secara lengkap tanpa backend
 
-**Fitur dashboard:**
-- Simulasi pipeline P1→P2→P3→Main berjalan langsung di browser
+Sistem mensimulasikan cara kerja tensimeter digital: manset dipompa hingga ~180 mmHg kemudian dikempiskan perlahan, osilasi tekanan arteri pada dinding manset dideteksi, dan nilai **Sistolic (SYS)**, **Mean Arterial Pressure (MAP)**, serta **Diastolik (DIA)** dihitung secara real-time.
+
+---
+
+## Tujuan
+
+1. Mengimplementasikan konsep **komputasi paralel** pada kasus nyata di bidang biomedis
+2. Membangun pipeline data streaming menggunakan `mp.Queue` dengan mekanisme backpressure
+3. Mensimulasikan pemrosesan sinyal fisiologis: filtering digital (notch + low-pass) dan deteksi puncak osilasi
+4. Memvisualisasikan hasil komputasi paralel secara real-time melalui Python (`matplotlib`) maupun browser (Chart.js)
+5. Menerapkan metode osilometrik standar untuk estimasi tekanan darah non-invasif
+
+---
+
+## Fitur Utama
+
+### Python Pipeline
+- Pipeline 3 proses paralel: **Akuisisi → Filter → Envelope/Deteksi Puncak → Visualisasi**
+- Komunikasi antar-proses via `mp.Queue(maxsize=20)` untuk flow control
+- Filter digital stateful: 60 Hz IIR notch (PLN Indonesia) + Butterworth low-pass 10 Hz
+- Estimasi BP inkremental menggunakan rasio osilometrik (SYS ≥ 50% max, DIA ≤ 70% max)
+- Visualisasi animasi real-time dengan `matplotlib.animation.FuncAnimation`
+
+### Web Dashboard
+- Simulasi pipeline berjalan sepenuhnya di browser — tidak perlu server
 - Tiga chart real-time: Cuff Pressure, Filtered Signal, Oscillation Envelope + Peaks
-- Panel BP dengan nilai SYS / MAP / DIA yang diperbarui inkremental
-- Indikator status proses paralel (P1, P2, P3, Main) dengan animasi pulse
-- Aksesibel: `aria-live` pada status message, `aria-label` pada canvas, touch target ≥ 44px
+- Panel estimasi tekanan darah dengan nilai SYS / MAP / DIA yang diperbarui inkremental
+- Indikator status proses P1, P2, P3, dan Main dengan animasi pulse
+- Desain aksesibel: `aria-live`, `aria-label` pada canvas, touch target ≥ 44px
 
----
-
-## Hardware (Implementasi Fisik)
-
+### Hardware (Implementasi Fisik)
 | Komponen | Spesifikasi |
 |----------|-------------|
 | Sensor tekanan | MPS20N0040D pressure bridge, 50–100 mV full-scale |
-| AFE | AD620 instrumentation amp (gain ≈ 105) + TLC2272 level shift @ 1,5 V |
+| AFE | AD620 instr. amp (gain ≈ 105) + TLC2272 level shift @ 1,5 V |
 | MCU | STM32F411CE (Black Pill) — ADC → UART → PC |
-| Bandwidth analog | ~1,2 kHz (diverifikasi dengan TINA-TI) |
-
-Skematik KiCad dan file simulasi TINA-TI tersedia di folder `KiCad/` dan `TINA-TI/`.
+| Bandwidth analog | ~1,2 kHz (diverifikasi TINA-TI) |
 
 ---
 
-## Cara Menjalankan
+## Prasyarat Instalasi
 
-### Web Dashboard (tanpa instalasi)
+### Untuk Web Dashboard
+- Browser modern (Chrome 90+, Firefox 88+, Edge 90+)
+- Tidak memerlukan instalasi apapun
 
-Buka `docs/index.html` langsung di browser, atau akses via GitHub Pages.
+### Untuk Python Pipeline
+| Prasyarat | Versi Minimum |
+|-----------|---------------|
+| Python | 3.10 |
+| numpy | 1.26 |
+| scipy | 1.12 |
+| matplotlib | 3.8 |
 
-### Python Pipeline
+---
+
+## Panduan Git Clone
+
+**1. Clone repository**
 
 ```bash
-# Install dependencies
-pip install -r src/requirements.txt
-
-# Jalankan dari root repo
-python -m src.main
+git clone https://github.com/Student-Embedded-Control-and-AI-Fest/CuffnCode.git
+cd CuffnCode
 ```
 
-> Python 3.10+ diperlukan. Pada Windows gunakan `spawn` start method (sudah dikonfigurasi di `main.py`).
+**2. (Opsional) Buat virtual environment**
+
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS / Linux
+source venv/bin/activate
+```
+
+**3. Install dependensi Python**
+
+```bash
+pip install -r src/requirements.txt
+```
 
 ---
 
-## Struktur Repo
+## Struktur Direktori
 
 ```
 CuffnCode/
 ├── docs/
-│   ├── index.html          # Web dashboard
-│   ├── assets/
-│   │   ├── style.css       # Stylesheet
-│   │   └── simulation.js   # Simulasi JS
-│   └── README.md           # File ini
+│   ├── index.html              # Web dashboard — buka langsung di browser
+│   ├── README.md               # Dokumentasi proyek (file ini)
+│   └── assets/
+│       ├── style.css           # Stylesheet dark medical theme
+│       └── simulation.js       # Pipeline simulasi lengkap (JavaScript)
 ├── src/
-│   ├── simulator.py        # P1 — Akuisisi / ADC simulation
-│   ├── filter_worker.py    # P2 — Digital filter (notch + LP)
-│   ├── envelope_worker.py  # P3 — Deteksi puncak & estimasi BP
-│   ├── main.py             # Main process — matplotlib visualisasi
-│   └── requirements.txt
-├── KiCad/                  # Skematik hardware
-└── TINA-TI/                # Simulasi rangkaian analog
+│   ├── __init__.py             # Package marker
+│   ├── simulator.py            # P1 — Simulasi ADC & akuisisi sinyal
+│   ├── filter_worker.py        # P2 — Filter digital (notch 60 Hz + LP 10 Hz)
+│   ├── envelope_worker.py      # P3 — Deteksi puncak & estimasi BP
+│   ├── main.py                 # Main process — visualisasi matplotlib
+│   └── requirements.txt        # Dependensi Python
+├── KiCad/                      # Skematik hardware
+└── TINA-TI/                    # Simulasi rangkaian analog
 ```
 
 ---
 
-## Mata Kuliah
+## Penggunaan
 
-**IFB 206 Komputasi Paralel** — Institut Teknologi Bandung  
-Topik: pemrograman paralel dengan Python `multiprocessing`, pipeline berbasis antrian, sinkronisasi proses.
+### Web Dashboard
+
+Buka file `docs/index.html` langsung di browser, kemudian klik **Start Simulation**.
+
+Atau akses via GitHub Pages (jika diaktifkan pada repository).
+
+### Python Pipeline
+
+Jalankan dari direktori root repository:
+
+```bash
+python -m src.main
+```
+
+Tiga jendela grafik matplotlib akan muncul dan menampilkan:
+- Sinyal mentah vs sinyal terfilter
+- Rampa tekanan manset
+- Envelope osilasi + puncak terdeteksi + estimasi SYS / MAP / DIA
+
+Hasil akhir ditampilkan di terminal setelah simulasi selesai:
+
+```
+================================================
+  Blood Pressure Estimation Summary
+================================================
+                        Estimated   Expected
+  Systolic (SYS)              120        120
+  Mean Arterial (MAP)         100        100
+  Diastolic (DIA)              80         80
+================================================
+```
+
+---
+
+## Kontribusi
+
+Proyek ini adalah tugas akademik untuk mata kuliah IFB 206 Komputasi Paralel. Kontribusi terbuka untuk perbaikan dokumentasi, optimasi pipeline, atau penambahan fitur visualisasi.
+
+**Langkah kontribusi:**
+
+1. Fork repository ini
+2. Buat branch baru: `git checkout -b nama-fitur`
+3. Commit perubahan: `git commit -m "Deskripsi perubahan"`
+4. Push ke branch: `git push origin nama-fitur`
+5. Buat Pull Request ke branch `main`
