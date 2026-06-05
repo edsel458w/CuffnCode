@@ -14,6 +14,8 @@
 - [Struktur Direktori](#struktur-direktori)
 - [Penggunaan](#penggunaan)
 - [Kontribusi](#kontribusi)
+- [Kontributor](#kontributor)
+- [Lisensi dan Penggunaan](#lisensi-dan-penggunaan)
 
 ---
 
@@ -179,3 +181,21 @@ Proyek ini adalah tugas akademik untuk mata kuliah IFB 206 Komputasi Paralel. Ko
 3. Commit perubahan: `git commit -m "Deskripsi perubahan"`
 4. Push ke branch: `git push origin nama-fitur`
 5. Buat Pull Request ke branch `main`
+
+---
+
+## Kontributor
+
+Project ini dibuat untuk memenuhi tugas **Evaluasi 3 — Komputasi Paralel dan Sistem Terdistribusi**.
+
+| Nama | NRP |
+|------|-----|
+| Edsel Sulthan Farrel | 152024166 |
+
+---
+
+## Lisensi dan Penggunaan
+
+Project ini merupakan pengembangan tambahan dari repository CuffnCode.
+
+
