@@ -1,0 +1,530 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #070710;
+  --bg2:        #0b0b1e;
+  --surface:    #101026;
+  --card:       #13132c;
+  --border:     #1c1c40;
+  --border2:    #27275c;
+
+  --accent:     #00e5ff;
+  --accent-dim: #00b3cc;
+  --accent2:    #ff9800;
+  --green:      #00e676;
+  --red:        #ff4081;
+  --purple:     #9f7aea;
+
+  /* FIX: muted lightened from #4e4e88 → #6868aa for 4.5:1 contrast */
+  --text:       #e2e2f4;
+  --text-dim:   #9898c4;
+  --muted:      #6868aa;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 65% 45% at 8% 0%,   rgba(0,229,255,.05)   0%, transparent 70%),
+    radial-gradient(ellipse 55% 45% at 92% 100%, rgba(159,122,234,.05) 0%, transparent 70%);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────────────── */
+header {
+  background: linear-gradient(180deg, #090918 0%, #0d0d24 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+}
+.logo-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.header-text h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: .02em;
+}
+.header-text p {
+  font-size: .75rem;    /* FIX: was .7rem (~11px) → .75rem */
+  color: var(--muted);
+  margin-top: 2px;
+}
+.header-badges { display: flex; gap: .5rem; flex-shrink: 0; }
+
+/* ── BADGES ──────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .25rem .65rem;
+  border-radius: 6px;
+  font-size: .7rem;     /* FIX: was .67rem */
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.badge-course {
+  background: rgba(0,229,255,.1);
+  border: 1px solid rgba(0,229,255,.25);
+  color: var(--accent);
+}
+.badge-bio {
+  background: rgba(159,122,234,.1);
+  border: 1px solid rgba(159,122,234,.25);
+  color: var(--purple);
+}
+
+/* ── PROCESS STATUS BAR ──────────────────────────────────────────────── */
+.proc-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: .625rem 1.5rem;  /* FIX: .55rem → .625rem (10px, cleaner scale) */
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.proc-label {
+  font-size: .7rem;     /* FIX: was .67rem */
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  flex-shrink: 0;
+}
+.proc-chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.proc-chip {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .3rem .75rem .3rem .6rem;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color .35s, background .35s;
+}
+.proc-chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+  transition: background .35s, box-shadow .35s;
+}
+.chip-text { display: flex; gap: .35rem; align-items: center; }
+.chip-id {
+  font-size: .72rem;    /* FIX: was .66rem (~10.5px) */
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  color: var(--muted);
+  transition: color .35s;
+}
+.chip-name {
+  font-size: .72rem;    /* FIX: was .66rem */
+  color: var(--muted);
+  transition: color .35s;
+}
+
+/* Active states — must match class names used in simulation.js setChip() */
+.proc-chip.active { border-color: var(--green); background: rgba(0,230,118,.08); }
+.proc-chip.active .dot {
+  background: var(--green);
+  animation: pulse-g 2s ease-in-out infinite;
+}
+.proc-chip.active .chip-id,
+.proc-chip.active .chip-name { color: var(--green); }
+
+.proc-chip.main-active { border-color: var(--accent2); background: rgba(255,152,0,.08); }
+.proc-chip.main-active .dot {
+  background: var(--accent2);
+  animation: pulse-o 2s ease-in-out infinite;
+}
+.proc-chip.main-active .chip-id,
+.proc-chip.main-active .chip-name { color: var(--accent2); }
+
+@keyframes pulse-g {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(0,230,118,.55); }
+  50%       { box-shadow: 0 0 0 5px rgba(0,230,118,0);   }
+}
+@keyframes pulse-o {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(255,152,0,.55); }
+  50%       { box-shadow: 0 0 0 5px rgba(255,152,0,0);   }
+}
+
+/* FIX: respect user motion preference for pulse animations */
+@media (prefers-reduced-motion: reduce) {
+  .proc-chip.active .dot,
+  .proc-chip.main-active .dot { animation: none; }
+}
+
+/* ── MAIN ────────────────────────────────────────────────────────────── */
+main { padding: 1.5rem 1.5rem 3rem; max-width: 1100px; margin: 0 auto; }
+
+/* ── CONTROLS ────────────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1.5rem;  /* FIX: 1.2rem → 1.5rem (24px) */
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem 1.25rem;
+  min-height: 44px;     /* touch target minimum (WCAG 2.5.5) */
+  border-radius: 8px;
+  border: none;
+  font-size: .875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .2s, transform .12s, box-shadow .2s;
+  letter-spacing: .01em;
+}
+.btn:active { transform: scale(.97); }
+/* FIX: add visible focus ring for keyboard navigation */
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn-start {
+  background: var(--accent);
+  color: #000;
+  box-shadow: 0 0 18px rgba(0,229,255,.22);
+}
+.btn-start:hover:not(:disabled) { box-shadow: 0 0 28px rgba(0,229,255,.38); }
+.btn-reset {
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border2);
+}
+.btn-reset:hover:not(:disabled) { background: var(--card); color: var(--text); }
+.btn:disabled { opacity: .38; cursor: not-allowed; }
+/* FIX: status-msg promoted from --muted to --text-dim (it's primary feedback) */
+.status-msg {
+  font-size: .8rem;
+  color: var(--text-dim);
+  margin-left: .25rem;
+}
+
+/* ── TOP ROW ─────────────────────────────────────────────────────────── */
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 700px) { .top-row { grid-template-columns: 1fr; } }
+
+/* ── CHART BOXES ─────────────────────────────────────────────────────── */
+.chart-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1rem .875rem;
+  position: relative;
+  overflow: hidden;
+  /* FIX: add depth shadow — cards were floating at the same level as the page */
+  box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+}
+/* color-coded top accent bar per process */
+.chart-box::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: 12px 12px 0 0;
+}
+.chart-box[data-process="p1"]::before { background: linear-gradient(90deg, var(--accent2) 0%, transparent 75%); }
+.chart-box[data-process="p2"]::before { background: linear-gradient(90deg, var(--accent)  0%, transparent 75%); }
+.chart-box[data-process="p3"]::before { background: linear-gradient(90deg, var(--green)   0%, transparent 75%); }
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+/* FIX: chart h3 bumped from .73rem → .78rem and from text-dim → text for prominence */
+.chart-header h3 {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: .01em;
+}
+.process-tag {
+  font-size: .68rem;    /* FIX: was .6rem (~9.6px) */
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  padding: .15rem .45rem;
+  border-radius: 4px;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.ptag-p1 { background: rgba(255,152,0,.14); color: var(--accent2); border: 1px solid rgba(255,152,0,.28); }
+.ptag-p2 { background: rgba(0,229,255,.1);  color: var(--accent);  border: 1px solid rgba(0,229,255,.22); }
+.ptag-p3 { background: rgba(0,230,118,.1);  color: var(--green);   border: 1px solid rgba(0,230,118,.22); }
+
+.chart-box canvas { display: block; width: 100% !important; }
+.chart-signal { margin-bottom: 1rem; }
+
+/* ── BP PANEL ────────────────────────────────────────────────────────── */
+.bp-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;   /* FIX: .55rem → .625rem (10px, on scale) */
+  box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+}
+.panel-title {
+  font-size: .78rem;    /* FIX: .73rem → .78rem */
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: .01em;
+}
+.bp-card {
+  border-radius: 8px;
+  padding: .625rem 1rem;    /* FIX: .6rem .875rem → .625rem 1rem */
+  text-align: center;
+  border: 1px solid var(--border);
+}
+/* FIX: bp-label was .62rem (~9.9px) — bumped to .72rem (min 11.5px) */
+.bp-label {
+  font-size: .72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 500;
+}
+.bp-value {
+  font-size: 2.25rem;   /* slight bump for visual weight */
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin: .25rem 0 .2rem;
+  transition: color .4s ease;
+}
+/* FIX: bp-unit was .62rem — bumped to .72rem */
+.bp-unit {
+  font-size: .72rem;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  letter-spacing: .04em;
+}
+.bp-sys { background: rgba(255,64,129,.06); border-color: rgba(255,64,129,.32); }
+.bp-sys .bp-value { color: var(--red); }
+.bp-map { background: rgba(0,230,118,.06); border-color: rgba(0,230,118,.32); }
+.bp-map .bp-value { color: var(--green); }
+.bp-dia { background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.32); }
+.bp-dia .bp-value { color: var(--accent); }
+.bp-note {
+  font-size: .72rem;    /* FIX: .69rem → .72rem */
+  color: var(--muted);
+  text-align: center;
+  margin-top: auto;
+  padding-top: .25rem;
+}
+
+/* ── SECTION CARD ────────────────────────────────────────────────────── */
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;     /* FIX: 1rem 1.125rem → uniform 1.25rem (20px) */
+  margin-top: 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+}
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  margin-bottom: 1rem;  /* FIX: .875rem → 1rem */
+}
+/* FIX: section headings bumped from .8rem → .875rem for better hierarchy */
+.section-heading h3 {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text);   /* FIX: text-dim → text for section headings */
+}
+.section-sub {
+  font-size: .72rem;    /* FIX: .68rem → .72rem */
+  color: var(--muted);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ── PIPELINE ────────────────────────────────────────────────────────── */
+.pipeline-steps {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: .75rem;
+}
+.pipe-step {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: .625rem 1rem;    /* FIX: .55rem .875rem → .625rem 1rem */
+  text-align: center;
+  min-width: 112px;
+}
+/* FIX: ps-num was .63rem (~10px) → .72rem */
+.ps-num {
+  font-size: .72rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  letter-spacing: .04em;
+  margin-bottom: .2rem;
+}
+.ps-title {
+  font-size: .75rem;    /* FIX: .72rem → .75rem */
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  color: var(--text-dim);
+}
+/* FIX: ps-desc was .65rem → .72rem */
+.ps-desc { font-size: .72rem; color: var(--muted); margin-top: .15rem; }
+
+.pipe-p1   .ps-num { color: var(--accent2); }
+.pipe-p2   .ps-num { color: var(--accent); }
+.pipe-p3   .ps-num { color: var(--green); }
+.pipe-main .ps-num { color: var(--purple); }
+.pipe-main { border-color: rgba(159,122,234,.35); }
+
+.pipe-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 .5rem;     /* FIX: .35rem → .5rem */
+}
+.pipe-arrow { font-size: 1rem; color: var(--border2); line-height: 1; }
+/* FIX: pipe-queue was .58rem (~9.3px) — bumped to .68rem */
+.pipe-queue {
+  font-size: .68rem;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-top: .15rem;
+}
+
+/* ── ABOUT ───────────────────────────────────────────────────────────── */
+.about {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+@media (max-width: 620px) { .about { grid-template-columns: 1fr; } }
+
+.about-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;     /* FIX: 1.1rem 1.125rem → uniform 1.25rem */
+  box-shadow: 0 2px 12px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+}
+.about-icon {
+  width: 36px;          /* FIX: 34 → 36px (on scale) */
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: .75rem;    /* FIX: .7rem → .75rem */
+}
+.about-icon-hw    { color: var(--accent2); }
+.about-icon-sw    { color: var(--accent); }
+.about-icon-med   { color: var(--red); }
+.about-icon-links { color: var(--purple); }
+
+/* FIX: about h3 bumped from .82rem → .875rem, matches section-heading scale */
+.about-card h3 {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .625rem;   /* FIX: .6rem → .625rem */
+}
+.about-card ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+/* FIX: li was .78rem (~12.5px) → .82rem, line-height 1.5 → 1.6 */
+.about-card li {
+  font-size: .82rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  padding-left: .875rem;
+  position: relative;
+}
+.about-card li::before { content: '·'; position: absolute; left: 0; color: var(--muted); }
+.about-card li strong { color: var(--text); font-weight: 600; }
+
+code {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: .8em;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: .05em .35em;
+  color: var(--accent-dim);
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { opacity: .82; text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer span, footer a { font-size: .75rem; color: var(--muted); }
+footer a:hover { color: var(--text-dim); text-decoration: none; }
